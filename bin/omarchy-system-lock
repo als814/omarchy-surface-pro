@@ -1,0 +1,10 @@
+#!/bin/bash
+# Smart lock wrapper: suppresses lock screen in tablet mode
+MODE_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/omarchy-mode"
+if [ -f "$MODE_FILE" ] && [ "$(cat "$MODE_FILE" 2>/dev/null)" = "tablet" ]; then
+    # In tablet mode, do not trigger the lock screen
+    exit 0
+fi
+
+# In laptop mode, pass through to stock omarchy-system-lock
+exec /usr/share/omarchy/bin/omarchy-system-lock "$@"

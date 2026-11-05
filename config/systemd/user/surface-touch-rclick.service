@@ -1,0 +1,13 @@
+[Unit]
+Description=Surface Touchscreen Two-Finger Tap Right-Click Daemon
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/bin/surface-touch-rclick.py
+Restart=on-failure
+RestartSec=2s
+
+[Install]
+WantedBy=graphical-session.target

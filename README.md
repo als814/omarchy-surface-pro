@@ -34,6 +34,12 @@ Seamlessly transitions between a high-efficiency keyboard-driven tiling desktop 
 - **Hardware Power & Sleep Protection**:
   - Monotonic clock debounce script prevents re-suspend loops on wake button press.
   - Udev rule prevents Type Cover USB autosuspend disconnects.
+- **Smart Tablet Lock Suppression**:
+  - Automatically disables password screen locking in Tablet Mode while preserving display screensaver sleep to save battery.
+  - Restores full password security immediately when the Type Cover is attached.
+- **Touchscreen Two-Finger Tap Right-Click (`surface-touch-rclick`)**:
+  - Low-latency multitouch gesture listener providing native right-click context menus on 2-finger tap.
+  - Excludes 1-finger taps/scrolls and 3-finger workspace paging.
 
 ---
 
@@ -45,17 +51,21 @@ omarchy-surface-pro/
 │   ├── surface-tablet-mode.py    # Mode detection daemon & CLI (omarchy-mode)
 │   ├── surface-rotate.py         # Accelerometer daemon & CLI (surface-rotate)
 │   ├── surface-osk               # On-screen keyboard manager (surface-osk)
+│   ├── surface-touch-rclick.py   # Two-finger tap right-click daemon
+│   ├── omarchy-system-lock       # Tablet-aware lock screen wrapper
 │   └── surface-power-button      # Monotonic sleep/wake button handler
 ├── config/
 │   ├── hypr/
 │   │   ├── input.lua             # Touchscreen digitizer & 1:1 swipe config
 │   │   └── bindings.lua          # Power button rebind & workspace shortcuts
 │   ├── omarchy/
+│   │   ├── power-idle-adjust.py  # Power & mode aware screensaver/lock manager
 │   │   ├── hooks/mode-set.d/     # Extensible hooks executed on mode change
 │   │   │   ├── 00-mode-logger.sh     # System logger hook
 │   │   │   ├── 20-qconsole-tablet.sh # Auto-dismiss Quake console on detach
 │   │   │   ├── 30-adaptive-shell.sh  # Dynamic Quickshell 34px/26px profile
-│   │   │   └── 40-osk-mode.sh        # Auto-hide OSK on keyboard attach
+│   │   │   ├── 40-osk-mode.sh        # Auto-hide OSK on keyboard attach
+│   │   │   └── 50-lock-mode.sh       # Suppress screen lock in tablet mode
 │   │   └── plugins/surface.homebar/ # Quickshell layer-shell plugin
 │   │       ├── manifest.json
 │   │       ├── HomeBar.qml       # State watchers & process dispatchers
@@ -63,7 +73,8 @@ omarchy-surface-pro/
 │   │       └── TopHandleWindow.qml# Top pull handle (height: 24px)
 │   └── systemd/user/
 │       ├── surface-tablet-mode.service # User daemon for mode switching
-│       └── surface-auto-rotate.service # User daemon for display rotation
+│       ├── surface-auto-rotate.service # User daemon for display rotation
+│       └── surface-touch-rclick.service# User daemon for 2-finger right-click
 ├── system/
 │   ├── udev/
 │   │   └── 90-surface-typecover.rules  # Disables USB autosuspend for Type Cover

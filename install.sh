@@ -58,15 +58,18 @@ fi
 log_info "Installing user scripts to ~/bin and ~/.local/bin..."
 mkdir -p "$BIN_DIR" "$LOCAL_BIN"
 
-for script in surface-tablet-mode.py surface-rotate.py surface-osk; do
-  install -m 755 "$REPO_DIR/bin/$script" "$BIN_DIR/$script"
-  ln -sf "$BIN_DIR/$script" "$LOCAL_BIN/$script"
+for script in surface-tablet-mode.py surface-rotate.py surface-osk surface-touch-rclick.py omarchy-system-lock; do
+  if [ -f "$REPO_DIR/bin/$script" ]; then
+    install -m 755 "$REPO_DIR/bin/$script" "$BIN_DIR/$script"
+    ln -sf "$BIN_DIR/$script" "$LOCAL_BIN/$script"
+  fi
 done
 
 # CLI convenience aliases
 ln -sf "$BIN_DIR/surface-tablet-mode.py" "$LOCAL_BIN/omarchy-mode"
 ln -sf "$BIN_DIR/surface-rotate.py" "$LOCAL_BIN/surface-rotate"
 ln -sf "$BIN_DIR/surface-rotate.py" "$LOCAL_BIN/auto-rotate"
+ln -sf "$BIN_DIR/surface-touch-rclick.py" "$LOCAL_BIN/surface-touch-rclick"
 
 if command -v wvkbd-mobintl >/dev/null 2>&1 && ! command -v wvkbd >/dev/null 2>&1; then
   ln -sf "$(command -v wvkbd-mobintl)" "$LOCAL_BIN/wvkbd"
@@ -97,10 +100,12 @@ log_info "Configuring systemd user services..."
 mkdir -p "$SYSTEMD_USER_DIR"
 install -m 644 "$REPO_DIR/config/systemd/user/surface-tablet-mode.service" "$SYSTEMD_USER_DIR/"
 install -m 644 "$REPO_DIR/config/systemd/user/surface-auto-rotate.service" "$SYSTEMD_USER_DIR/"
+install -m 644 "$REPO_DIR/config/systemd/user/surface-touch-rclick.service" "$SYSTEMD_USER_DIR/"
 
 systemctl --user daemon-reload
 systemctl --user enable --now surface-tablet-mode.service
 systemctl --user enable --now surface-auto-rotate.service
+systemctl --user enable --now surface-touch-rclick.service
 log_ok "Systemd services enabled and active."
 
 # 6. Hyprland Configuration Check
