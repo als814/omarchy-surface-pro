@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "surface.homebar",
+  "name": "Surface Home Bar",
+  "version": "1.0.0",
+  "author": "Alex",
+  "description": "iPad-style bottom home indicator and app grid launcher for tablet mode",
+  "kinds": [
+    "service"
+  ],
+  "entryPoints": {
+    "service": "HomeBar.qml"
+  }
+}

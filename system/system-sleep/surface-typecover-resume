@@ -1,0 +1,16 @@
+#!/bin/bash
+# systemd sleep hook for Surface Pro 5
+# Records monotonic timestamp to prevent wake-up loop race condition
+
+GLOBAL_FILE="/run/surface_last_mono"
+
+case "$1" in
+  pre)
+    python3 -c "import time; open(\"$GLOBAL_FILE\", \"w\").write(str(time.clock_gettime(time.CLOCK_MONOTONIC)))" 2>/dev/null || true
+    chmod 644 "$GLOBAL_FILE" 2>/dev/null || true
+    ;;
+  post)
+    python3 -c "import time; open(\"$GLOBAL_FILE\", \"w\").write(str(time.clock_gettime(time.CLOCK_MONOTONIC)))" 2>/dev/null || true
+    chmod 644 "$GLOBAL_FILE" 2>/dev/null || true
+    ;;
+esac

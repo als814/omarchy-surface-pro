@@ -1,0 +1,133 @@
+#!/usr/bin/env python3
+"""
+Surface On-Screen Keyboard (wvkbd) Manager
+Controls wvkbd-mobintl: toggle, show, hide, kill.
+Maintains state in /run/user/$UID/surface-osk.state
+"""
+
+import sys
+import os
+import signal
+import subprocess
+import time
+
+STATE_FILE = f"/run/user/{os.getuid()}/surface-osk.state"
+PID_FILE = f"/run/user/{os.getuid()}/surface-osk.pid"
+
+def get_wvkbd_pid():
+    try:
+        res = subprocess.run(["pgrep", "-u", str(os.getuid()), "-x", "wvkbd-mobintl"], capture_output=True, text=True)
+        pids = [int(p) for p in res.stdout.strip().split() if p.isdigit()]
+        return pids[0] if pids else None
+    except Exception:
+        return None
+
+def is_visible():
+    if not os.path.exists(STATE_FILE):
+        return False
+    try:
+        return open(STATE_FILE).read().strip() == "visible"
+    except Exception:
+        return False
+
+def set_visible(visible: bool):
+    try:
+        with open(STATE_FILE, "w") as f:
+            f.write("visible" if visible else "hidden")
+    except Exception:
+        pass
+
+def start_daemon():
+    pid = get_wvkbd_pid()
+    if pid:
+        return pid
+
+    cmd = [
+        "wvkbd-mobintl",
+        "--hidden",
+        "-L", "290",
+        "-H", "340",
+        "-R", "8",
+        "--bg", "1c1c1e",
+        "--fg", "2c2c2e",
+        "--fg-sp", "3a3a3c",
+        "--text", "f5f5f7",
+        "--press", "48484a",
+        "--alpha", "245",
+    ]
+
+    env = os.environ.copy()
+    proc = subprocess.Popen(
+        cmd,
+        start_new_session=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        stdin=subprocess.DEVNULL,
+    )
+    set_visible(False)
+    time.sleep(0.2)
+    return proc.pid
+
+def show():
+    pid = get_wvkbd_pid()
+    if not pid:
+        pid = start_daemon()
+    try:
+        os.kill(pid, signal.SIGUSR2)
+        set_visible(True)
+        print("OSK: visible")
+    except Exception as e:
+        print(f"Failed to show OSK: {e}")
+
+def hide():
+    pid = get_wvkbd_pid()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGUSR1)
+        except Exception:
+            pass
+    set_visible(False)
+    print("OSK: hidden")
+
+def toggle():
+    pid = get_wvkbd_pid()
+    if not pid:
+        start_daemon()
+        show()
+        return
+
+    if is_visible():
+        hide()
+    else:
+        show()
+
+def kill():
+    pid = get_wvkbd_pid()
+    if pid:
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except Exception:
+            pass
+    set_visible(False)
+    print("OSK: killed")
+
+def main():
+    action = sys.argv[1] if len(sys.argv) > 1 else "toggle"
+
+    if action == "show":
+        show()
+    elif action == "hide":
+        hide()
+    elif action == "toggle":
+        toggle()
+    elif action == "kill":
+        kill()
+    elif action == "status":
+        pid = get_wvkbd_pid()
+        vis = is_visible()
+        print(f"OSK running: {pid is not None} (PID: {pid}), visible: {vis}")
+    else:
+        print(f"Usage: {sys.argv[0]} [show|hide|toggle|kill|status]")
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,3 @@
+# Microsoft Surface Type Cover (045e:09c0)
+# Prevent USB autosuspend to avoid disconnects and input latency after resume
+ACTION=="add|change", SUBSYSTEM=="usb", ATTRS{idVendor}=="045e", ATTRS{idProduct}=="09c0", ATTR{power/control}="on", ATTR{power/wakeup}="enabled", ENV{ID_AUTOSUSPEND}="0"

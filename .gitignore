@@ -1,0 +1,23 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary and editor files
+*.swp
+*.swo
+*~
+.DS_Store
+.idea/
+.vscode/
+
+# Local state & logs
+*.log
+.cache/
+/run/
+
+# Secrets and personal data
+*.env
+*.pem
+*.key
+*.secret

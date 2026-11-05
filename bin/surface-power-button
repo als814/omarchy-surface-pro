@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+"""
+Surface Pro smart power button handler
+Uses CLOCK_MONOTONIC to distinguish between a user request to sleep
+and a hardware wake-up button press.
+Since CLOCK_MONOTONIC stops during suspend, the time difference between
+entering suspend and resuming is nearly 0 (< 4 seconds), whereas real time
+can be hours.
+"""
+import os
+import sys
+import time
+import subprocess
+
+GLOBAL_FILE = "/run/surface_last_mono"
+USER_FILE = f"/run/user/{os.getuid()}/surface_power_mono"
+LOCK_DIR = f"/run/user/{os.getuid()}/surface_power.lock"
+
+now = time.clock_gettime(time.CLOCK_MONOTONIC)
+
+# Check both global pre-sleep record and user state file
+last_mono = 0.0
+for path in (GLOBAL_FILE, USER_FILE):
+    if os.path.exists(path):
+        try:
+            with open(path, "r") as f:
+                val = float(f.read().strip())
+                if val > last_mono:
+                    last_mono = val
+        except Exception:
+            pass
+
+diff = now - last_mono
+# If less than 4 monotonic seconds have elapsed since suspend was initiated,
+# this event is the wake-up press; ignore it to prevent re-suspending.
+if 0.0 <= diff < 4.0:
+    sys.exit(0)
+
+# Debounce rapid key bounce / multiple clicks
+try:
+    os.mkdir(LOCK_DIR)
+except FileExistsError:
+    sys.exit(0)
+
+try:
+    # Save the current monotonic time before initiating sleep
+    with open(USER_FILE, "w") as f:
+        f.write(str(now))
+    subprocess.run(["systemctl", "suspend-then-hibernate"])
+finally:
+    try:
+        os.rmdir(LOCK_DIR)
+    except OSError:
+        pass
