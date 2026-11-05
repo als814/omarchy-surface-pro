@@ -58,7 +58,7 @@ fi
 log_info "Installing user scripts to ~/bin and ~/.local/bin..."
 mkdir -p "$BIN_DIR" "$LOCAL_BIN"
 
-for script in surface-tablet-mode.py surface-rotate.py surface-osk surface-touch-rclick.py omarchy-system-lock; do
+for script in surface-tablet-mode.py surface-rotate.py surface-osk surface-touch-rclick.py omarchy-system-lock surface-volume-nav; do
   if [ -f "$REPO_DIR/bin/$script" ]; then
     install -m 755 "$REPO_DIR/bin/$script" "$BIN_DIR/$script"
     ln -sf "$BIN_DIR/$script" "$LOCAL_BIN/$script"

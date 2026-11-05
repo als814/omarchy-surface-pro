@@ -40,6 +40,12 @@ Seamlessly transitions between a high-efficiency keyboard-driven tiling desktop 
 - **Touchscreen Two-Finger Tap Right-Click (`surface-touch-rclick`)**:
   - Low-latency multitouch gesture listener providing native right-click context menus on 2-finger tap.
   - Excludes 1-finger taps/scrolls and 3-finger workspace paging.
+- **Smart Hardware Volume Navigation (`surface-volume-nav`)**:
+  - Context-aware physical volume rocker: acts as native system volume in Laptop Mode or when outside the terminal.
+  - When in Tablet Mode with a Terminal or Quake console focused:
+    - **Volume Up**: Navigates options upward (`Up` arrow).
+    - **Volume Down**: Navigates options downward (`Down` arrow).
+    - **Both sides pressed together**: Emits `Enter` (`Return`) to select/confirm without needing a keyboard.
 
 ---
 
@@ -52,6 +58,7 @@ omarchy-surface-pro/
 │   ├── surface-rotate.py         # Accelerometer daemon & CLI (surface-rotate)
 │   ├── surface-osk               # On-screen keyboard manager (surface-osk)
 │   ├── surface-touch-rclick.py   # Two-finger tap right-click daemon
+│   ├── surface-volume-nav        # Context-aware volume rocker D-pad
 │   ├── omarchy-system-lock       # Tablet-aware lock screen wrapper
 │   └── surface-power-button      # Monotonic sleep/wake button handler
 ├── config/

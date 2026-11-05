@@ -1,0 +1,141 @@
+#!/usr/bin/env python3
+"""
+Surface Pro Smart Volume Navigation
+- In Laptop Mode OR when outside terminal: Acts as standard system volume control.
+- In Tablet Mode when Terminal / Quake console is focused:
+    - Volume Up   -> Arrow Up (navigates options)
+    - Volume Down -> Arrow Down (navigates options)
+    - Both sides pressed together -> Return (selects/confirms option)
+"""
+
+import os
+import sys
+import time
+import json
+import subprocess
+
+CHORD_WINDOW = 0.160  # 160ms threshold for simultaneous chord detection
+
+
+def is_tablet_mode():
+    try:
+        mode_file = f"/run/user/{os.getuid()}/omarchy-mode"
+        if os.path.exists(mode_file):
+            with open(mode_file, "r") as f:
+                return f.read().strip() == "tablet"
+    except Exception:
+        pass
+    return False
+
+
+def is_terminal_focused():
+    try:
+        # Check if special workspace (Quake console) is open on any monitor
+        m_res = subprocess.run(["hyprctl", "monitors", "-j"], capture_output=True, text=True, timeout=0.8)
+        monitors = json.loads(m_res.stdout) if m_res.stdout.strip() else []
+        for m in monitors:
+            if m.get("specialWorkspace", {}).get("name") == "special:qconsole":
+                return True
+
+        # Check active window details
+        res = subprocess.run(["hyprctl", "activewindow", "-j"], capture_output=True, text=True, timeout=0.8)
+        win = json.loads(res.stdout) if res.stdout.strip() else {}
+        cls = (win.get("class") or win.get("initialClass") or "").lower()
+        tags = " ".join(win.get("tags") or []).lower()
+        ws_name = win.get("workspace", {}).get("name", "")
+
+        if ws_name == "special:qconsole":
+            return True
+        if "terminal" in tags or cls in ("foot", "alacritty", "kitty", "ghostty", "wezterm", "xterm", "org.omarchy.qconsole"):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def fallback_audio(direction):
+    action = "raise" if direction == "up" else "lower"
+    try:
+        os.execvp("omarchy-audio-output-volume", ["omarchy-audio-output-volume", action])
+    except Exception:
+        subprocess.run(["omarchy-audio-output-volume", action], check=False)
+        sys.exit(0)
+
+
+def send_key(key):
+    try:
+        subprocess.run(["wtype", "-k", key], check=False)
+    except Exception:
+        pass
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("Usage: surface-volume-nav <up|down>")
+        sys.exit(1)
+
+    direction = sys.argv[1].lower()
+    if direction not in ("up", "down"):
+        sys.exit(1)
+
+    # If NOT tablet mode, pass through immediately to audio volume
+    if not is_tablet_mode():
+        fallback_audio(direction)
+        return
+
+    # If terminal / Quake console is NOT focused, pass through immediately to audio volume
+    if not is_terminal_focused():
+        fallback_audio(direction)
+        return
+
+    # In Tablet Mode AND Terminal is active: Handle menu navigation & chords
+    state_dir = f"/run/user/{os.getuid()}"
+    other_direction = "down" if direction == "up" else "up"
+    my_file = f"{state_dir}/surface_vol_{direction}"
+    other_file = f"{state_dir}/surface_vol_{other_direction}"
+    chord_file = f"{state_dir}/surface_vol_chord"
+
+    now = time.time()
+    try:
+        with open(my_file, "w") as f:
+            f.write(str(now))
+    except Exception:
+        pass
+
+    # Wait briefly for potential companion rocker press
+    time.sleep(CHORD_WINDOW)
+
+    # Check if a chord was already fired recently
+    if os.path.exists(chord_file):
+        try:
+            with open(chord_file, "r") as f:
+                last_chord = float(f.read().strip())
+            if (now - last_chord) < (CHORD_WINDOW * 2.0):
+                sys.exit(0)
+        except Exception:
+            pass
+
+    # Check if the opposite button was pressed within the chord window
+    if os.path.exists(other_file):
+        try:
+            with open(other_file, "r") as f:
+                other_time = float(f.read().strip())
+            if abs(now - other_time) <= CHORD_WINDOW:
+                # CHORD DETECTED: Up + Down pressed together!
+                try:
+                    with open(chord_file, "w") as f:
+                        f.write(str(now))
+                except Exception:
+                    pass
+                send_key("Return")
+                sys.exit(0)
+        except Exception:
+            pass
+
+    # Single button press
+    key = "Up" if direction == "up" else "Down"
+    send_key(key)
+
+
+if __name__ == "__main__":
+    main()

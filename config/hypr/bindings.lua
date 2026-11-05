@@ -35,3 +35,7 @@ o.bind("SUPER + TAB", "Former workspace", hl.dsp.focus({ workspace = "previous" 
 -- Rebind power button to instant suspend with resume-debounce protection
 o.rebind("XF86PowerOff", "Suspend", "/usr/local/bin/surface-power-button", { locked = true })
 
+-- Rebind volume buttons: Smart terminal navigation in Tablet Mode, native volume in Laptop Mode
+o.rebind("XF86AudioRaiseVolume", "Volume / Menu Up", os.getenv("HOME") .. "/bin/surface-volume-nav up", { locked = true, repeating = true })
+o.rebind("XF86AudioLowerVolume", "Volume / Menu Down", os.getenv("HOME") .. "/bin/surface-volume-nav down", { locked = true, repeating = true })
+
